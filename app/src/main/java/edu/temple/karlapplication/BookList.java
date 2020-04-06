@@ -13,39 +13,29 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class BookList extends Fragment {
 
     private static final String BOOK_LIST_KEY = "booklist";
-    private ArrayList<HashMap<String, String>> books;
+    private static final String Search_KEY = "";
+    private ArrayList<Book> books;
+    private String Mysearch;
 
     BookSelectedInterface parentActivity;
 
     public BookList() {}
 
-    public static BookList newInstance(ArrayList<HashMap<String, String>> books) {
+    public static BookList newInstance(ArrayList<Book> books, String search) {
         BookList fragment = new BookList();
         Bundle args = new Bundle();
-
-        /*
-         A HashMap implements the Serializable interface
-         therefore we can place a HashMap inside a bundle
-         by using that put() method.
-         */
         args.putSerializable(BOOK_LIST_KEY, books);
+        args.putString(Search_KEY,search);
         fragment.setArguments(args);
         return fragment;
     }
-
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-
-        /*
-         This fragment needs to communicate with its parent activity
-         so we verify that the activity implemented our known interface
-         */
         if (context instanceof BookSelectedInterface) {
             parentActivity = (BookSelectedInterface) context;
         } else {
@@ -58,6 +48,7 @@ public class BookList extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             books = (ArrayList) getArguments().getSerializable(BOOK_LIST_KEY);
+            Mysearch= getArguments().getString(Search_KEY);
         }
     }
 
@@ -66,7 +57,9 @@ public class BookList extends Fragment {
                              Bundle savedInstanceState) {
         ListView listView = (ListView) inflater.inflate(R.layout.fragment_book_list, container, false);
 
-        listView.setAdapter(new BooksAdapter(getContext(), books));
+        BooksAdapter customAdapter = new BooksAdapter(getContext(), books);
+     //   customAdapter.getFilter().filter(Mysearch);
+        listView.setAdapter(customAdapter);
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -78,9 +71,6 @@ public class BookList extends Fragment {
         return listView;
     }
 
-    /*
-    Interface for communicating with attached activity
-     */
     interface BookSelectedInterface {
         void bookSelected(int index);
     }

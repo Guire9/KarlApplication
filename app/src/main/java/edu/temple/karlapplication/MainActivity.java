@@ -5,58 +5,98 @@ import androidx.fragment.app.FragmentManager;
 
 import android.app.Application;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+
 
 public class MainActivity extends AppCompatActivity implements BookList.BookSelectedInterface {
 
+    EditText search;
+    Button button;
+    String s;
     FragmentManager fm;
 
     boolean twoPane;
     BookDetailsFragment bookDetailsFragment;
+    static int detailsIndex;       //Index of the details fragment selected
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        twoPane = findViewById(R.id.container2) != null;
-
+        button = findViewById(R.id.button);
+        search= findViewById(R.id.search);
+        s = search.getText().toString();
         fm = getSupportFragmentManager();
 
-        fm.beginTransaction()
-                .replace(R.id.container1, BookList.newInstance(getTestBooks()))
-                .commit();
+        //when searchButton is clicked
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                s= search.getText().toString();
+                fm = getSupportFragmentManager();
+                fm.beginTransaction()
+                        .replace(R.id.fragment_list_container,BookList.newInstance(getTestBooks(),s))
+                        .commit();
+                Toast.makeText(getApplicationContext(),s,Toast.LENGTH_LONG).show();
+            }
+        });
+        // Fragments in Portrait mode
+        if (findViewById(R.id.layout_portrait)!=null){
 
-        if (twoPane) {
-           bookDetailsFragment = new BookDetailsFragment();
-      //     BookDetailsFragment.SavedState();
-           fm.beginTransaction()
-                    .replace(R.id.container2, bookDetailsFragment)
+            //Transaction sets fragment list to entire book list
+            fm.beginTransaction()
+                    .replace(R.id.fragment_list_container, BookList.newInstance(getTestBooks(),s))
                     .commit();
+
+            twoPane = findViewById(R.id.fragment_details_container) != null;
+
+            if (twoPane) {
+                bookDetailsFragment = new BookDetailsFragment();
+                //     BookDetailsFragment.SavedState();
+                fm.beginTransaction()
+                        .replace(R.id.fragment_details_container, bookDetailsFragment)
+                        .commit();
+            }
+        }
+        // Fragments in landscape mode
+        else if(findViewById(R.id.layout_landscape)!=null){
+            fm.beginTransaction()
+                    .replace(R.id.fragment_list_container, BookList.newInstance(getTestBooks()," "))
+                    .commit();
+            fm.beginTransaction()
+                    .replace(R.id.fragment_details_container, BookDetailsFragment.newInstance(getTestBooks().get(detailsIndex)))
+                    .addToBackStack(null)
+                    .commit();
+
         }
     }
-
-    private ArrayList<HashMap<String, String>> getTestBooks() {
-        ArrayList<HashMap<String, String>> books = new ArrayList<HashMap<String, String>>();
-        HashMap<String, String> book;
+    private ArrayList<Book> getTestBooks() {
+        ArrayList<Book> books = new ArrayList<Book>();
+        Book book;
         for (int i = 0; i < 10; i++) {
-            book = new HashMap<String, String>();
-            book.put("title", "Book" + i);
-            book.put("author", "Author" + i);
+            book = new Book("Author"+i,"title");
             books.add(book);
         }
         return books;
-    };
+    }
     @Override
     public void bookSelected(int index) {
-        if (twoPane)
-            bookDetailsFragment.displayBook(getTestBooks().get(index));
-        else {
+        detailsIndex = index;
+        if (findViewById(R.id.layout_landscape) !=null){
             fm.beginTransaction()
-                    .replace(R.id.container1, BookDetailsFragment.newInstance(getTestBooks().get(index)))
+                    .replace(R.id.fragment_details_container, BookDetailsFragment.newInstance(getTestBooks().get(index)))
+                    .addToBackStack(null)
+                    .commit();
+    }else if(findViewById(R.id.layout_landscape) ==null){
+            fm.beginTransaction()
+                    .replace(R.id.fragment_list_container, BookDetailsFragment.newInstance(getTestBooks().get(index)))
                     .addToBackStack(null)
                     .commit();
         }
